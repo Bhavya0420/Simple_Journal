@@ -112,6 +112,16 @@ const NoteDetailPage = () => {
                   onChange={(e) => setNote({ ...note, content: e.target.value })}
                 />
               </div>
+              <div className="form-control mb-4">
+                <label className="label"><span className="label-text">Tags (comma separated)</span></label>
+                <input
+                  type="text"
+                  className="input input-bordered"
+                  value={note.tags?.join(", ")}
+                  onChange={(e) => setNote({ ...note, tags: e.target.value.split(",").map(t => t.trim()) })}
+                />
+              </div>
+
 
               <div className="card-actions justify-end">
                 <button className="btn btn-primary" disabled={saving} onClick={handleSave}>

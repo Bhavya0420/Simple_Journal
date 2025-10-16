@@ -1,27 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import RateLimitedUI from "../components/RateLimitedUI";
-import { useEffect } from "react";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
 import NoteCard from "../components/NoteCard";
 import NotesNotFound from "../components/NotesNotFound";
+import NoSearchResults from "../components/NoSearchResults";
 
 const HomePage = () => {
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [notes, setNotes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNotes = async () => {
       try {
         const res = await api.get("/notes");
-        console.log(res.data);
         setNotes(res.data);
         setIsRateLimited(false);
       } catch (error) {
         console.log("Error fetching notes");
-        console.log(error.response);
         if (error.response?.status === 429) {
           setIsRateLimited(true);
         } else {
@@ -35,20 +35,57 @@ const HomePage = () => {
     fetchNotes();
   }, []);
 
+  const filteredNotes = notes.filter(note => {
+  const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        note.content.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesTag = !selectedTag || (note.tags && note.tags.includes(selectedTag));
+  return matchesSearch && matchesTag;
+});
+
+const allTags = [...new Set(notes.flatMap(note => note.tags || []))];
+
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-base-100 text-base-content transition-colors duration-300">
       <Navbar />
 
+      {/* 🔍 Search & Filter Section */}
+      <div className="max-w-6xl mx-auto px-6 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search notes..."
+          className="input input-bordered w-full md:w-1/2"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <select value={selectedTag} onChange={e => setSelectedTag(e.target.value)}>
+          <option value="">All Tags</option>
+          {allTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+        </select>
+
+      </div>
+
+      {/* 🧱 Notes Section */}
       {isRateLimited && <RateLimitedUI />}
 
-<div className="min-h-screen bg-base-100 text-base-content transition-colors duration-300 pt-6">
-        {loading && <div className="text-center text-primary py-10">Loading notes...</div>}
+      <div className="max-w-6xl mx-auto px-6 pb-12">
+        {loading && (
+          <div className="text-center text-primary py-10">
+            Loading notes...
+          </div>
+        )}
 
         {!loading && notes.length === 0 && !isRateLimited && <NotesNotFound />}
 
-        {notes.length > 0 && !isRateLimited && (
+        {!loading && notes.length > 0 && filteredNotes.length === 0 && !isRateLimited && (
+          <NoSearchResults />
+        )}
+
+
+        {filteredNotes.length > 0 && !isRateLimited && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {notes.map((note) => (
+            {filteredNotes.map((note) => (
               <NoteCard key={note._id} note={note} setNotes={setNotes} />
             ))}
           </div>
@@ -57,4 +94,5 @@ const HomePage = () => {
     </div>
   );
 };
+
 export default HomePage;

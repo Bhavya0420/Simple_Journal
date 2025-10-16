@@ -10,6 +10,7 @@ export async function getAllNotes(req, res) {
   }
 }
 
+// Get a single note by ID
 export async function getNoteById(req, res) {
   try {
     const note = await Note.findById(req.params.id);
@@ -23,16 +24,25 @@ export async function getNoteById(req, res) {
   }
 }
 
+// Create a new note
 export async function createNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const note = await Note.create({ title, content, user: req.user._id });
+    const { title, content, tags } = req.body;
+
+    const note = await Note.create({
+      title,
+      content,
+      tags: tags || [], // ensure tags is an array
+      user: req.user._id,
+    });
+
     res.status(201).json(note);
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
+// Update a note (including tags)
 export async function updateNote(req, res) {
   try {
     const note = await Note.findById(req.params.id);
@@ -41,8 +51,10 @@ export async function updateNote(req, res) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    note.title = req.body.title || note.title;
-    note.content = req.body.content || note.content;
+    note.title = req.body.title ?? note.title;
+    note.content = req.body.content ?? note.content;
+    note.tags = req.body.tags ?? note.tags; // <-- allow updating tags
+
     const updatedNote = await note.save();
     res.json(updatedNote);
   } catch (error) {
@@ -50,6 +62,7 @@ export async function updateNote(req, res) {
   }
 }
 
+// Delete a note
 export async function deleteNote(req, res) {
   try {
     const note = await Note.findById(req.params.id);
@@ -57,6 +70,7 @@ export async function deleteNote(req, res) {
     if (note.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized" });
     }
+
     await note.deleteOne();
     res.json({ message: "Note deleted successfully" });
   } catch (error) {

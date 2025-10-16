@@ -1,5 +1,5 @@
 import { ArrowLeftIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
 import api from "../lib/axios";
@@ -7,9 +7,14 @@ import api from "../lib/axios";
 const CreatePage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const theme = localStorage.getItem("theme") || "lemonade";
+    document.querySelector("html").setAttribute("data-theme", theme);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,13 +29,15 @@ const CreatePage = () => {
       await api.post("/notes", {
         title,
         content,
+        tags: tags.split(",").map(t => t.trim()), // convert comma-separated to array
       });
+
 
       toast.success("Note created successfully!");
       navigate("/");
     } catch (error) {
       console.log("Error creating note", error);
-      if (error.response.status === 429) {
+      if (error.response?.status === 429) {
         toast.error("Slow down! You're creating notes too fast", {
           duration: 4000,
           icon: "💀",
@@ -81,6 +88,19 @@ const CreatePage = () => {
                   />
                 </div>
 
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Tags (comma separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., work, personal, ideas"
+                    className="input input-bordered"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                  />
+                </div>
+
                 <div className="card-actions justify-end">
                   <button type="submit" className="btn btn-primary" disabled={loading}>
                     {loading ? "Creating..." : "Create Note"}
@@ -94,4 +114,5 @@ const CreatePage = () => {
     </div>
   );
 };
+
 export default CreatePage;
