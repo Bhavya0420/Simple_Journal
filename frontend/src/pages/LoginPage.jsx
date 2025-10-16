@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
@@ -26,6 +27,12 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+      // Apply the saved theme from localStorage
+      const theme = localStorage.getItem("theme") || "lemonade";
+      document.querySelector("html").setAttribute("data-theme", theme);
+    }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4">
